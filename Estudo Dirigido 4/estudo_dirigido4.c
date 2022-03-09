@@ -108,7 +108,7 @@ void *consumer(void *a) {
       }
 
       contador--;
-      printf("Consumidor %d produziu um item, número de elementos no buffer = %d\n", i, contador);
+      printf("Consumidor %d consumiu um item, número de elementos no buffer = %d\n", i, contador);
 
       sleep(1);
 
