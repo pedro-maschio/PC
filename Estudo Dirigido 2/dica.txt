@@ -1,0 +1,5 @@
+Encontrar forma de quando tiver um escritor tentando acessar o banco de dados, impedir que novos leitores tentem ler da base de dados.
+A solução pode ser feita usando mais um lock (hehe)
+Tem que comentar o código
+
+Starvation de escritores!!

@@ -1,0 +1,4 @@
+No exemplo.png, as threads não ficam bloqueadas pelo lock pos no cond_wait o lock é liberado, e não há risco pois a thread tá parada
+
+
+Uma condição para os produtores e uma para os consumidores
