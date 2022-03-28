@@ -9,7 +9,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define N 3 // tamanho do buffer
+#define N 5 // tamanho do buffer
 #define NP 1 // número de produtores
 #define NC 1 // número de consumidores
 
@@ -106,7 +106,7 @@ void *consumer(void *a) {
 
     pthread_mutex_lock(&mutex_buffer);
         contador--;
-        printf("Consumidor %d produziu um item, número de elementos no buffer = %d\n", i, contador);
+        printf("Consumidor %d consumiu um item, número de elementos no buffer = %d\n", i, contador);
     pthread_mutex_unlock(&mutex_buffer);
 
     sem_post(&empty);
