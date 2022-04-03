@@ -13,22 +13,16 @@
 #define CARTAS 20 //quantidade de cartas na mochila
 int cnt_cartas = 0; // quantidade atual de cartas
 
-sem_t sem_cartas; // semáforo que representa a qtd de cartas
-sem_t sem_pombo; // mutex do pombo 
-sem_t sem_entrega; // semáforo para liberar a entrega (voo) das cartas
+pthread_cond_t cond_pombo = PTHREAD_COND_INITIALIZER; // variável de condição do pombo
+pthread_cond_t cond_entrega = PTHREAD_COND_INITIALIZER;  // variável de condição para liberar a entrega (voo) das cartas quando a mochila estiver cheia
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 void * f_usuario(void *arg);
 void * f_pombo(void *arg);
 
 int main(int argc, char **argv){
     int i;
-
-    // Semáforos iniciados
-    sem_init(&sem_cartas, 0, CARTAS);
-    sem_init(&sem_pombo, 0, 1);
-    // iniciando com 0 pois inicialmente o pombo não pode entregar
-    sem_init(&sem_entrega, 0, 0);
-
 
     pthread_t usuario[N];
     int *id;
@@ -54,23 +48,22 @@ void * f_pombo(void *arg){
         
 
         //Inicialmente está em A, aguardar/dorme a mochila ficar cheia (20 cartas)
-        sem_wait(&sem_entrega); // com a permissão recebida, o pombo pode voar
-        sem_wait(&sem_pombo);
+        pthread_mutex_lock(&mutex);
+        
+            while(cnt_cartas < CARTAS) {
+                pthread_cond_wait(&cond_pombo, &mutex);
+            }
             //Leva as cartas para B e volta para A 
             printf("O pombo partiu de A para B\n");
             sleep(1);
             printf("O pombo entregou as cartas em B\n");
 
-            // Acordar os usuários para que eles escrevam novas cartas
-            for(int i = 0; i < CARTAS; i++) {
-                sem_post(&sem_cartas);
-                cnt_cartas--;
-            }
+            cnt_cartas = 0; // após entregar as cartas, o pombo fica com 0 cartas
 
             printf("O pombo voltou para A e está pronto pra trabalhar!\n");
             sleep(1);
 
-        sem_post(&sem_pombo);
+        pthread_mutex_unlock(&mutex);
     }
 }
 
@@ -82,18 +75,24 @@ void * f_usuario(void *arg){
         //Posta sua carta na mochila do pombo
         //Caso a mochila fique cheia, acorda o ṕombo
 
-        sem_wait(&sem_pombo);
-            sem_wait(&sem_cartas); // pega uma carta
+        pthread_mutex_lock(&mutex);
+            
+            // Se a mochila estiver cheia, espera
+            while(cnt_cartas == CARTAS) {
+                pthread_cond_wait(&cond_entrega, &mutex);
+            }
 
+            // Escreve uma carta
             cnt_cartas++;
             printf("O usuário %d escreveu uma carta, a quantidade de cartas escritas eh: %d\n", id, cnt_cartas);
             sleep(1); // tempo para escrever a carta
 
             if(cnt_cartas == CARTAS) {
-                sem_post(&sem_entrega); // dá a permissão pro pombo entregar as cartas
+                // Usamos signal em vez de broadcast pois só há um pombo
+                pthread_cond_signal(&cond_pombo);
             }
             
-        sem_post(&sem_pombo);
+        pthread_mutex_unlock(&mutex);
         sleep(1);
     }
 }

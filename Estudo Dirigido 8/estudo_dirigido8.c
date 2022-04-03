@@ -1,3 +1,7 @@
+/*
+ * Aluno: Pedro de Torres Maschio
+ * Matrícula: 190018763
+*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -41,7 +45,7 @@ int main () {
 	     pthread_create(&r[i], NULL, filosofos, (void*) (id));
 	}
 
-        pthread_join(r[0],NULL);
+    pthread_join(r[0],NULL);
 	return 0;
 }
 
@@ -74,7 +78,7 @@ void pega_talher (int n) {
 void tenta_comer(int n) {
 	/*
 		Condições necessárias para o filósofo poder comer: estar
-		com fome e os vizinhos não podem estar comendo. Caso
+		com fome e os vizinhos não podem estar comendo. 
 	*/
 	if(estado_filosofo[n] == COMFOME && 
 		estado_filosofo[ESQ(n)] != COMENDO && 
