@@ -17,9 +17,8 @@ int total_no_elevador = 0; // quantidade de pessoas no elevador no momento
 int pessoas_andar[N]; // indica a quantidade de pessoas no andar i
 
 pthread_mutex_t mutex; // mutex para proteger a posição do elevador
+pthread_mutex_t leituraVetor;
 pthread_cond_t elevador_cond = PTHREAD_COND_INITIALIZER;
-//sem_t total_no_elevador;
-
 
 
 void * f_andar(void *arg);
@@ -30,7 +29,6 @@ int pessoas_acima(int);
 int main(int argc, char **argv){
     int i;
 
-    //sem_init(&total_no_elevador, 0, 0); // inicialmente há 0 pessoas no elevador
 
     for(int i = 0; i < N; i++) {
         pessoas_andar[i] = 0; // inicialmente há 0 pessoas em cada andar
@@ -54,7 +52,9 @@ int main(int argc, char **argv){
 }
 
 /*
-    Função do andar, há N andares.
+    Função do andar, nesta função, os andares do prédio são populados
+    com uma quantidade de pessoas que vai de [0, C]. A thread do elevador
+    só é acordada caso haja um número maior que zero de pessoas.
 */
 void * f_andar(void *arg){
     int id = *((int *)arg);
@@ -67,17 +67,19 @@ void * f_andar(void *arg){
 
         pthread_mutex_unlock(&mutex);
 
-        pthread_cond_signal(&elevador_cond); // sinaliza ao elevador que há pessoas em algum andar
+        if(qtd_pessoas > 0)
+            pthread_cond_signal(&elevador_cond); // sinaliza ao elevador que há pessoas em algum andar
 
     }
 }
 
 /*
-    Função do elevador
+    Função do elevador, nesta função está implementada toda a lógica de funcionamento do 
+    elevador.
 */
 void * f_elevador(void *arg){
     int id = *((int *)arg);
-    int flag = 0;
+    int solicitado = 0, emDescida = 0;
     while(1){
 
 
@@ -87,16 +89,16 @@ void * f_elevador(void *arg){
                 printf("Não há pessoas solicitando o elevador, o elevador vazio está parado no andar %d\n", andar);
                 pthread_cond_wait(&elevador_cond, &mutex);
             }
-            if(flag == 1) {
+            if(solicitado == 1) {
                 printf("Elevador solicitado, o elevador está ");
                 if(direcao == 0)
                     printf("descendo\n");
                 else 
                     printf("subindo\n");
-                flag = 0;
+                solicitado = 0;
             }
 
-            if(pessoas_acima(andar)) { // se há pessoas acima da posição do elevador
+            if(pessoas_acima(andar) && !emDescida) { // se há pessoas acima da posição do elevador
                 direcao = 1;
             } else {
                 direcao = 0;
@@ -107,6 +109,7 @@ void * f_elevador(void *arg){
                     pessoas_andar[andar] = C - total_no_elevador;
                     total_no_elevador = C;
                     direcao = 0; // já encheu, hora de descer
+                    emDescida = 1;
                 } else {
                     total_no_elevador += pessoas_andar[andar];
                     pessoas_andar[andar] = 0; // entraram todas as pessoas
@@ -123,7 +126,8 @@ void * f_elevador(void *arg){
             if(andar == 0) {
                 printf("O elevador chegou ao térreo, atualmente está com zero pessoas\n");
                 total_no_elevador = 0;
-                flag = 1;
+                solicitado = 1;
+                emDescida = 0;
                 direcao = 1; // ao chegar no térreo, ele só pode subir
             }
             sleep(1); // o elevador não é instantâneo
@@ -136,18 +140,27 @@ void * f_elevador(void *arg){
 }
 
 int ha_pessoas_nos_andares() {
-    for(int i = 0; i < N; i++) {
-        if(pessoas_andar[i] > 0)
-            return 1;
-    }
+    pthread_mutex_lock(&leituraVetor);
+        for(int i = 0; i < N; i++) {
+            if(pessoas_andar[i] > 0) {
+                pthread_mutex_unlock(&leituraVetor);
+                return 1;
+            }
+        }
+    pthread_mutex_unlock(&leituraVetor);
+    
     return 0;
 }
 
 int pessoas_acima(int andar) {
-    for(int i = andar; i < N; i++) {
-        if(pessoas_andar[i] > 0)
-            return 1;
-    }
+    pthread_mutex_lock(&leituraVetor);
+        for(int i = andar; i < N; i++) {
+            if(pessoas_andar[i] > 0) {
+                pthread_mutex_unlock(&leituraVetor);
+                return 1;
+            }
+        }
+    pthread_mutex_unlock(&leituraVetor);
     return 0;
 }
 
