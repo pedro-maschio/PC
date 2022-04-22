@@ -1,0 +1,10 @@
+Ideia de trabalho final: há um prédio com N andares, esse prédio possui um elevador com capacidade para C pessoas. O elevador possui três estados:
+parado, subindo e descendo. De modo aleatório, podem aparecer c[i] pessoas no andar i, por simplicidade, todas elas, ao entrar no elevador, solicitam
+ir ao andar x. Ao existir ao menos uma pessoa em um andar, essa pessoa solicita imediatamente o elevador, caso o número de pessoas em um andar exceda 
+a capacidade do elevador, somente uma parte das pessoas adentra o elevador. O elevador somente se dirige ao andar que possui pessoas se não tiver sua 
+capacidade excedida. A parte de concorrência desse trabalho que eu pude pensar, é a parte de que as pessoas devem esperar o elevador. Depois que o  
+elevador chega, cada pessoa para de esperar e adentram o elevador. 
+
+
+Existe um único processo de elevador e várias threads por andar. Por simplificação, toda pessoa que está em um andar superior ao térreo quer
+descer no térreo e toda pessoa que pega o elevador no térreo quer descer no andar mais alto
